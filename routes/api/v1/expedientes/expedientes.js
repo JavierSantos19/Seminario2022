@@ -54,14 +54,16 @@ router.get('/byid/:id', async(req, res) => {
 router.post('/new', async(req, res) => {
     const {
         identidad,
-        fecha,
+        fecha = new Date(),
         descripcion,
         observacion,
         registros,
-        ultimaActualizacion
+        ultimaActualizacion = new Date()
     } = req.body;
 
-    rslt = await expedienteModel.new(identidad, fecha, descripcion, observacion, registros, ultimaActualizacion);
+
+
+    rslt = await expedienteModel.new(identidad, fecha.toISOString(), descripcion, observacion, registros, ultimaActualizacion.toISOString());
 
     res.status(200).json({
         status: 'OK',
@@ -80,15 +82,15 @@ router.put('/update/:id', async(req, res) => {
     try {
         const {
             identidad,
-            fecha,
+            fecha = new Date(),
             descripcion,
             observacion,
             registros,
-            ultimaActualizacion
+            ultimaActualizacion = new Date()
         } = req.body;
 
         const { id } = req.params;
-        const result = await expedienteModel.updateOne(id, identidad, fecha, descripcion, observacion, registros, ultimaActualizacion);
+        const result = await expedienteModel.updateOne(id, identidad, fecha.toISOString(), descripcion, observacion, registros, ultimaActualizacion.toISOString());
         res.status(200).json({
             status: 'ok',
             result
