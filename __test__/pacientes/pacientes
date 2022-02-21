@@ -1,0 +1,11 @@
+/*const app = require('../../app');
+const supertest = require("supertest");
+
+describe('Test suite de api v1 pacientes endpoint ', () => {
+    it("GET /api/v1/pacientes", async() => {
+        await supertest(app).get('api/v1/pacientes')
+            .set({ apitoken: '90bee0c7-c070-40c7-9a4f-b963fb61a53e' })
+            .expect(200);
+
+    });
+});*/

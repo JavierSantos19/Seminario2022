@@ -43,7 +43,7 @@ router.get('/all', async(req, res) => {
 router.get('/byid/:id', async(req, res) => {
     try {
         const { id } = req.params;
-        const row = await expedienteModel.getById(parseInt(id));
+        const row = await expedienteModel.getById(id);
         res.status(200).json({ status: 'OK', expediente: row });
     } catch (ex) {
         console.log(ex);
@@ -51,19 +51,56 @@ router.get('/byid/:id', async(req, res) => {
     }
 }); // GET INDIVIDUAL
 
+const allowedItemsNumber = [10, 15, 20];
+//facet search
+router.get('/facet/:page/:items', async(req, res) => {
+    const page = parseInt(req.params.page, 10);
+    const items = parseInt(req.params.items, 10);
+    if (allowedItemsNumber.includes(items)) {
+        try {
+            const pacientes = await expedienteModel.getFaceted(page, items);
+            res.status(200).json({ docs: pacientes });
+        } catch (ex) {
+            console.log(ex);
+            res.status(500).json({ status: 'failed' });
+        }
+    } else {
+        return res.status(403).json({ status: 'error', msg: 'Not a valid item value (10,15,20)' });
+    }
+
+});
+
+router.get('/byname/:ide/:page/:items', async(req, res) => {
+    const ide = req.params.ide;
+    const page = parseInt(req.params.page, 10);
+    const items = parseInt(req.params.items, 10);
+    if (allowedItemsNumber.includes(items)) {
+        try {
+            const expedientes = await expedienteModel.getFaceted(page, items, { identidad: ide });
+            res.status(200).json({ docs: expedientes });
+        } catch (ex) {
+            console.log(ex);
+            res.status(500).json({ status: 'failed' });
+        }
+    } else {
+        return res.status(403).json({ status: 'error', msg: 'Not a valid item value (10,15,20)' });
+    }
+
+});
+
 router.post('/new', async(req, res) => {
     const {
         identidad,
-        fecha = new Date(),
+        fecha,
         descripcion,
         observacion,
         registros,
-        ultimaActualizacion = new Date()
+        ultimaActualizacion
     } = req.body;
 
 
 
-    rslt = await expedienteModel.new(identidad, fecha.toISOString(), descripcion, observacion, registros, ultimaActualizacion.toISOString());
+    rslt = await expedienteModel.new(identidad, fecha, descripcion, observacion, registros, ultimaActualizacion);
 
     res.status(200).json({
         status: 'OK',
@@ -82,15 +119,45 @@ router.put('/update/:id', async(req, res) => {
     try {
         const {
             identidad,
-            fecha = new Date(),
+            fecha,
             descripcion,
             observacion,
             registros,
-            ultimaActualizacion = new Date()
+            ultimaActualizacion
         } = req.body;
 
         const { id } = req.params;
-        const result = await expedienteModel.updateOne(id, identidad, fecha.toISOString(), descripcion, observacion, registros, ultimaActualizacion.toISOString());
+        const result = await expedienteModel.updateOne(id, identidad, fecha, descripcion, observacion, registros, ultimaActualizacion);
+        res.status(200).json({
+            status: 'ok',
+            result
+        })
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json({ status: 'FAILED' });
+    }
+});
+
+router.put('/addtag/:id', async(req, res) => {
+    try {
+        const { tag } = req.body;
+        const { id } = req.params;
+        const result = await expedienteModel.updateAddTag(id, tag);
+        res.status(200).json({
+            status: 'ok',
+            result
+        })
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).json({ status: 'FAILED' });
+    }
+});
+
+router.put('/addtagset/:id', async(req, res) => {
+    try {
+        const { tag } = req.body;
+        const { id } = req.params;
+        const result = await expedienteModel.updateAddTagSet(id, tag);
         res.status(200).json({
             status: 'ok',
             result

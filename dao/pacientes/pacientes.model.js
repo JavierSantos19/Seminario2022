@@ -1,97 +1,111 @@
-const getDb = require('../db');
+const getDb = require('../mongodb');
+const ObjectId = require('mongodb').ObjectId
 let db = null;
 class Pacientes {
-
+    collections = null;
     constructor() {
         getDb()
             .then((database) => {
                 db = database;
+                this.collections = db.collection('Pacientes');
                 if (process.env.MIGRATE === 'true') {
-                    const createStatement = 'CREATE TABLE IF NOT EXISTS pacientes (id INTEGER PRIMARY KEY AUTOINCREMENT, identidad TEXT, nombre TEXT, apellidos TEXT, email TEXT, telefono TEXT);';
-                    db.run(createStatement);
+
                 }
             })
             .catch((err) => { console.error(err) });
     }
 
-    new(nombres, apellidos, identidad, telefono, correo) {
-        return new Promise((accept, reject) => {
-            db.run(
-                'INSERT INTO pacientes (identidad, nombre, apellidos, email, telefono) VALUES (?, ?, ?, ?, ?);', [identidad, nombres, apellidos, correo, telefono],
-                (err, rslt) => {
-                    if (err) {
-                        console.error(err);
-                        reject(err);
-                    }
-                    accept(rslt);
-                }
-            );
-        });
+    async new(nombre, apellidos, identidad, telefono, email) {
+        const newPaciente = {
+            nombre,
+            apellidos,
+            identidad,
+            telefono,
+            email
+        };
+        const rslt = await this.collections.insertOne(newPaciente);
+        return rslt;
+    }
+    async getAll() {
+        const cursor = this.collections.find({});
+        const documents = await cursor.toArray();
+        return documents;
+
+    }
+    async getFaceted(page, items, filter = {}) {
+        const cursor = this.collections.find(filter);
+        const totalItems = await cursor.count();
+        cursor.skip((page - 1) * items);
+        cursor.limit(items);
+        const resultados = await cursor.toArray();
+        return {
+            totalItems,
+            page,
+            items,
+            totalPages: (Math.ceil(totalItems / items)),
+            resultados
+        };
+    }
+    async getById(id) {
+        const _id = new ObjectId(id);
+        const filter = { _id };
+        const myDocument = this.collections.findOne(filter);
+        return myDocument;
     }
 
-    getAll() {
-        return new Promise((accept, reject) => {
-            db.all('SELECT * from pacientes;', (err, rows) => {
-                if (err) {
-                    console.error(err);
-                    reject(err);
-                } else {
-                    accept(rows);
-                }
-            });
-        });
-    }
+    async updateOne(id, nombre, apellidos, identidad, telefono, email) {
+        const filter = { _id: new ObjectId(id) };
+        const updateCmd = {
+            '$set': {
+                nombre,
+                apellidos,
+                identidad,
+                telefono,
+                email
 
-    getById(id) {
-        return new Promise((accept, reject) => {
-            db.get('SELECT * from pacientes where id=?;', [id],
-                (err, row) => {
-                    if (err) {
-                        console.error(err);
-                        reject(err);
-                    } else {
-                        accept(row);
-                    }
-                });
-        });
-    }
-
-    updateOne(id, nombres, apellidos, identidad, telefono, correo) {
-        return new Promise(
-            (accept, reject) => {
-                const sqlUpdate = 'UPDATE pacientes set nombre= ?, apellidos= ?, telefono= ?, identidad= ?, email= ? where id= ?;';
-                db.run(
-                    sqlUpdate, [nombres, apellidos, telefono, identidad, correo, id],
-                    function(err) {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            accept(this);
-                        }
-                    }
-                );
             }
+        };
+        return await this.collections.updateOne(filter, updateCmd);
 
-        );
     }
 
-    deleteOne(id) {
-        return new Promise(
-            (accept, reject) => {
-                const sqlDelete = 'DELETE FROM pacientes where id=?;'
-                db.run(
-                    sqlDelete, [id],
-                    function(err) {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            accept(this);
-                        }
-                    }
-                );
+    async updateAddTag(id, tagEntry) {
+        const updateCmd = {
+            "$push": {
+                tags: tagEntry
             }
+        }
 
-        );
+        const filter = { _id: new ObjectId(id) };
+        return await this.collections.updateOne(filter, updateCmd);
+    }
+
+    async updateAddTagSet(id, tagEntry) {
+        const updateCmd = {
+            "$addToSet": {
+                tags: tagEntry
+            }
+        }
+
+        const filter = { _id: new ObjectId(id) };
+        return await this.collections.updateOne(filter, updateCmd);
+    }
+
+    async updatePopTag(id, tagEntry) {
+        const updateCmd = {
+            "$pop": {
+                tags: tagEntry
+            }
+        }
+
+        const filter = { _id: new ObjectId(id) };
+        return await this.collections.updateOne(filter, updateCmd);
+    }
+
+    async deleteOne(id) {
+        const filter = { _id: new ObjectId(id) };
+
+        return await this.collections.deleteOne(filter);
     }
 }
 
