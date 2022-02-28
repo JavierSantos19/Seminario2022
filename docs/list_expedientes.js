@@ -41,8 +41,8 @@ for (var i = 0; i < expedientes; i++) {
     const secuencia = String(Math.ceil(Math.random() * 99999)).padStart(5, '0');
     const descripcion = descript[Math.floor(Math.random() * 7)];
     const observacion = observ[Math.floor(Math.random() * 1)];
-    const fecha = date[Math.floor(Math.random() * 4)];
-    const ultimaActualizacion = dateres[Math.floor(Math.random() * 4)];
+    const fecha = new Date(); //date[Math.floor(Math.random() * 4)];
+    const ultimaActualizacion = new Date(); //dateres[Math.floor(Math.random() * 4)];
     const registros = Math.floor(Math.random() * (hasta - (desde - 0))) + desde;
 
     const doc = {
